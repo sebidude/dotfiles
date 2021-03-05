@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# set to true if you use tmux
+USE_TMUX="true"
+
+. $HOME/dotfiles/tmux
+. $HOME/dotfiles/env
+. $HOME/dotfiles/aliases
+. $HOME/dotfiles/kubernetes
+. $HOME/dotfiles/utils
+. $HOME/dotfiles/gopowerline
+
+if [ -d $HOME/dotfiles/private ]; then
+    for f in $HOME/dotfiles/private/*; do
+        . $f
+    done
+fi

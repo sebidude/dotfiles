@@ -1,0 +1,151 @@
+#!/bin/bash
+export PATH="$PATH:$HOME/.krew/bin"
+KUBECONFIG_DEFAULT="$HOME/.kube/default/default.conf"
+
+kctl=$(which kubectl)
+if [ -n "$kclt" -a -x "$kctl" ]; then
+    source <(kubectl completion bash)
+fi
+
+helmbin=$(which helm)
+if [ -n "$helmbin" -a -x "$helmbin" ]; then
+    source <(helm completion bash)
+fi
+
+updateKubectl() {
+    if [ -n "$1" ]; then
+        KUBECTLVERSION="$1"
+    else
+        KUBECTLVERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
+    fi
+    echo Updating kubectl to $KUBECTLVERSION
+    curl -s -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTLVERSION}/bin/linux/amd64/kubectl 
+    mkdir -p $HOME/bin
+    chmod 755 kubectl 
+    mv kubectl $HOME/bin/kubectl-$KUBECTLVERSION
+    rm -f $HOME/bin/kubectl
+    ln -s $HOME/bin/kubectl-$KUBECTLVERSION $HOME/bin/kubectl
+}
+
+debugpodon() {
+    cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: $(whoami)-debug-$1
+  labels:
+    owner: $(whoami)
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: $1
+  terminationGracePeriodSeconds: 1
+  containers:
+  - name: alpine
+    image: alpine
+    command:
+    - sleep
+    - infinity
+EOF
+
+while sleep 1
+do
+    READY=$(kubectl get pod $(whoami)-debug-$1 | grep Running )
+    [[ -n "$READY" ]] && {
+        kubectl exec -i -t $(whoami)-debug-$1 -- /bin/sh
+        kubectl delete pod $(whoami)-debug-$1
+        break
+    }
+done
+}
+
+debugpod() {
+    cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: $(whoami)-debug
+  labels:
+    owner: $(whoami)
+spec:
+  terminationGracePeriodSeconds: 1
+  containers:
+  - name: alpine
+    image: alpine
+    command:
+    - sleep
+    - infinity
+EOF
+
+while sleep 1
+do
+    READY=$(kubectl get pod $(whoami)-debug | grep Running )
+    [[ -n "$READY" ]] && {
+        kubectl exec -i -t $(whoami)-debug -- /bin/sh
+        kubectl delete pod $(whoami)-debug
+        break
+    }
+done
+}
+
+
+kubeconfig() {
+    if [ -n "$1" ]; then
+        KUBECONFIG_DEFAULT="$1"
+        KUBECONFIG=$KUBECONFIG_DEFAULT
+    elif [ -z "$KUBECONFIG" ]; then
+        KUBECONFIG=$KUBECONFIG_DEFAULT
+    fi
+
+
+    cp $KUBECONFIG $HOME/.kube/default/current-$$.conf
+    export PREVIOUS_KUBECONFIG=$KUBECONFIG;
+    export KUBECONFIG=$HOME/.kube/default/current-$$.conf;
+}
+
+_getKubeNamespaces() {
+  local curr_arg;
+  local NAMESPACES;
+  curr_arg=${COMP_WORDS[COMP_CWORD]}
+  NAMESPACES="$(kubectl get ns -o jsonpath='{.items[*].metadata.name}')"
+  COMPREPLY=( $(compgen -W "${NAMESPACES}" -- $curr_arg ) );
+}
+
+_getKubeContexts() {
+  local curr_arg;
+  local CONTEXTS;
+  curr_arg=${COMP_WORDS[COMP_CWORD]}
+  CONTEXTS="$(kubectl config get-contexts -o name)"
+  COMPREPLY=( $(compgen -W "${CONTEXTS}" -- $curr_arg ) );
+}
+
+ktx() {
+    if [ -n "$1" ]; then
+        kubectl config use-context $1
+        return 0
+    fi
+    return 1
+}
+
+kubens() {
+    if [ -n "$1" ]; then
+        kubectl config set-context --current --namespace=$1
+        return 0
+    fi
+    return 1
+}
+
+getAdminConfig() {
+    echo "not implemented"
+}
+
+cleanupSession() {
+    rm $HOME/.kube/default/current-$$.conf
+}
+
+alias k=kubectl
+alias watch="watch "
+complete -F __start_kubectl k
+complete -F _getKubeNamespaces kubens
+complete -F _getKubeContexts ktx
+trap  cleanupSession EXIT
+kubeconfig

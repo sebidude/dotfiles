@@ -1,0 +1,89 @@
+#!/bin/bash
+
+getDateUnixtime(){
+    date --date="@$1"
+}
+
+unsetProxies(){
+    export all_proxy=
+    export ftp_proxy=
+    export http_proxy=
+    export https_proxy=
+    export no_proxy=
+}
+
+selectBgPic() {
+    select pic in $(ls -1 $HOME/walls); do
+        setBgPic $HOME/walls/$pic
+        break
+    done
+}
+
+setBgPic() {
+    pic="$1"
+    fullpic=$(realpath "$pic")
+    ls -1 "$fullpic" &>/dev/null
+    if [ $? -ne 0 ] ; then
+        return
+    fi
+    sed -i 's#\(^exec feh --bg-fill\) .*#\1 '$fullpic'#' ~/.i3/config
+    feh --bg-fill "$fullpic"
+}
+
+shouldWe() { 
+    RES=$(($RANDOM%2)); 
+    if [ $RES -eq 1 ]; then 
+        echo "YES we should $*!"; 
+    else 
+        echo "NO, we better not $*."; 
+    fi 
+}
+
+checkSOA() {
+    ns=$1
+    domain=$2
+    [[ -z "$ns" ]] && echo "usage: checkSOA <nameserver> <domain>" && return
+    [[ -z "$domain" ]] && echo "usage: checkSOA <nameserver> <domain>" && return
+
+    while sleep 5; do 
+        echo {$domain via $ns}  $(date) == SOA: $(date -d @$(dig +nocookie +short @$1 SOA $2 | awk '{print $3}')); 
+    done
+}
+
+base64decode() {
+    echo -n "$1" | base64 -d ;echo
+}
+
+host_uptime(){
+    set -x
+    {
+        printf "%-25s %s " "$1:" "$(date +%Y%m%d)"
+        echo $(ssh $1 uptime)
+    } >> uptimes
+    set +x
+}
+
+camshot() {
+    ffmpeg -f video4linux2 -i /dev/video0 -ss 0:0:2 -frames 1 $HOME/pics/${1:-camshot-$(date +%Y%m%d-%H%M%S).jpg}
+}
+
+printColors() { 
+    for i in {0..255}; do 
+        echo -n $(tput setab $i) $(printf "%03d" $i) $(tput setab 0); 
+        if [ $(($(($i+1)) % 16)) = 0 ]; then 
+            echo ;
+        fi 
+    done; 
+    echo; 
+}
+
+printBg() { 
+    b=$1; 
+    for i in {0..255}; do 
+        echo -n $(tput setab $b)$(tput setaf $i) $(printf "%03d" $i) $(tput setab 0)$(tput setaf 255); 
+        if [ $(($(($i+1)) % 16)) = 0 ]; then 
+            echo ;
+        fi; 
+    done; 
+    echo; 
+}
