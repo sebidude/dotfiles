@@ -1,7 +1,7 @@
 #!/bin/bash
 
 _fullscriptpath="$(readlink -f ${BASH_SOURCE[0]})"
-BASEDIR="$(dirname $_fullscriptpath)"
+DOTFILEDIR="$(dirname $_fullscriptpath)"
 
 # check if include is present in bashrc
 
@@ -10,7 +10,7 @@ if [ $# -ne 1 ];then
     exit 1
 fi
 
-if ! grep -e "^. $BASEDIR/include" $1
+if ! grep -e "^. $DOTFILEDIR/include" $1
 then
-    echo ". $BASEDIR/include" >> $1
+    echo ". $DOTFILEDIR/include" >> $1
 fi

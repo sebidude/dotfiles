@@ -1,17 +1,20 @@
 #!/bin/bash
 
+_fullscriptpath="$(readlink -f ${BASH_SOURCE[0]})"
+export DOTFILEDIR="$(dirname $_fullscriptpath)"
+
 # set to true if you use tmux
 USE_TMUX="true"
 
-. $HOME/dotfiles/tmux
-. $HOME/dotfiles/env
-. $HOME/dotfiles/aliases
-. $HOME/dotfiles/kubernetes
-. $HOME/dotfiles/utils
-. $HOME/dotfiles/gopowerline
+. $DOTFILEDIR/tmux
+. $DOTFILEDIR/env
+. $DOTFILEDIR/aliases
+. $DOTFILEDIR/kubernetes
+. $DOTFILEDIR/utils
+. $DOTFILEDIR/gopowerline
 
-if [ -d $HOME/dotfiles/private ]; then
-    for f in $HOME/dotfiles/private/*; do
+if [ -d $DOTFILEDIR/private ]; then
+    for f in $DOTFILEDIR/private/*; do
         . $f
     done
 fi
