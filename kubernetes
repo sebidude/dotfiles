@@ -3,7 +3,7 @@ export PATH="$PATH:$HOME/.krew/bin"
 KUBECONFIG_DEFAULT="$HOME/.kube/default/default.conf"
 
 kctl=$(which kubectl)
-if [ -n "$kclt" -a -x "$kctl" ]; then
+if [ -n "$kctl" -a -x "$kctl" ]; then
     source <(kubectl completion bash)
 fi
 
