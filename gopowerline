@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ALIAS_PATH='-path-aliases "repos/gitlab.com=gitlab,repos/github.com=github"'
+ALIAS_PATH='-path-aliases repos/gitlab.com=gitlab,repos/github.com=github'
 
 function _update_ps1() {
   PS1="$($GOPATH/bin/powerline-go -theme ~/.config/powerline.json -modules kube,cwd,git,exit -error $? -shell bash $ALIAS_PATH)"
